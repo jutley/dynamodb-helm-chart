@@ -1,0 +1,51 @@
+Image:
+  Repository: peopleperhour/dynamodb
+  Tag: latest
+  PullPolicy: IfNotPresent
+
+Resources:
+  requests:
+    cpu: 100m
+    memory: 200Mi
+  limits:
+    cpi: 100m
+    memory: 200Mi
+
+Service:
+  Port: 8000
+  Type: NodePort
+
+TableBootstrap:
+  Image: 
+    Repository: mesosphere/aws-cli
+    Tag: latest
+    PullPolicy: IfNotPresent
+  Tables:
+  - Name: test-table
+    # AttributeDefinitions and KeySchemas should contain exactly the same attributes. If you want additional attributes, they don't have to be explicitly defined.
+    AttributeDefinitions:
+    - AttrName: id
+      AttrType: "S"
+    - AttrName: attr1
+      AttrType: "N"
+    KeySchemas:
+    - AttrName: id
+      KeyType: HASH
+    - AttrName: attr1
+      KeyType: RANGE
+    ProvisionedThroughput:
+      ReadCapacityUnits: 5
+      WriteCapacityUnits: 5
+    StartingItems:
+    - |-
+      {
+        "id": {"S": "id1"},
+        "attr1": {"N": "42"},
+        "attr2": {"S": "foo"}
+      }
+    - |-
+      {
+        "id": {"S": "id2"},
+        "attr1": {"N": "24"},
+        "attr2": {"S": "bar"}
+      }

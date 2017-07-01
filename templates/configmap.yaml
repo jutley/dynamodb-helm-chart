@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app: {{ template "name" . }}
+data:
+  bootstrap.sh: |-
+    #! /bin/sh
+    
+    DYN_URL="http://{{ template "fullname" . }}:{{ .Values.Service.Port }}"
+
+{{- range .Values.TableBootstrap.Tables }}
+    aws --endpoint-url $DYN_URL dynamodb create-table \
+      --table-name {{ .Name }} \
+      --region us-west-2 \
+      --attribute-definitions {{ range .AttributeDefinitions }} AttributeName={{ .AttrName }},AttributeType={{ .AttrType }} {{ end }} \
+      --key-schema {{ range .KeySchemas }} AttributeName={{ .AttrName }},KeyType={{ .KeyType }} {{ end }} \
+      --provisioned-throughput ReadCapacityUnits={{ .ProvisionedThroughput.ReadCapacityUnits}},WriteCapacityUnits={{ .ProvisionedThroughput.WriteCapacityUnits }}
+
+{{ $tableName := .Name }}
+{{- range .StartingItems }}
+    aws --endpoint-url $DYN_URL dynamodb put-item \
+      --region us-west-2 \
+      --table-name {{ $tableName }} \
+      --item '{{ . | indent 8 | trim }}'
+{{- end }}
+{{- end }}

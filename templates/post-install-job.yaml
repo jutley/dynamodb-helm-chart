@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app: {{ template "name" . }}
+  annotations:
+    "helm.sh/hook": post-install
+spec:
+  template:
+    metadata:
+      name: {{ template "fullname" . }}
+      labels:
+        release: {{ .Release.Name }}
+        app: {{ template "name" . }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap-tables
+          image: {{ .Values.TableBootstrap.Image.Repository }}:{{ .Values.TableBootstrap.Image.Tag }}
+          imagePullPolicy: {{ .Values.TableBootstrap.Image.PullPolicy }}
+          command: ["sh", "/tmp/bootstrap.sh"]
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: bogus
+            - name: AWS_SECRET_ACCESS_KEY
+              value: bogus
+          volumeMounts:
+            - name: bootstrap-script
+              mountPath: /tmp
+      volumes:
+        - name: bootstrap-script
+          configMap:
+            name: {{ template "fullname" . }}

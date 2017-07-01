@@ -1,0 +1,3 @@
+name: dynamodb
+description: DynamoDB with table bootstrapping
+version: 0.1.0
